@@ -1,0 +1,12 @@
+This should be HighCharts js folder and jquery.min.js
+
+HighCharts
+http://www.highcharts.com/download
+
+JQuery
+https://jquery.com/download/
+
+
+
+
+
