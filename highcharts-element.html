@@ -1,0 +1,120 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="highcharts-import.html">
+
+<dom-module name="highcharts-element">
+
+  <style>
+  </style>
+
+  <template>
+	<div id="container" style="width: 270px; height: 180px"></div>
+  </template>
+
+  <script>
+      Polymer({
+          is: "highcharts-element",
+
+          properties: {
+              value: {
+                  type: Number
+              },
+              title: {
+                  type: String
+              },
+              label: {
+                  type: String
+              },
+			  seriename: {
+                  type: String
+			  }
+          },
+          attached: function() {
+            this.async(this._createContext, 1);  // Sanity
+          },
+          _createContext: function() {
+              var target = this.$.container;
+              var gaugeOptions = {
+                  chart: {
+                      renderTo: target,
+                    type: 'solidgauge'
+                  },
+
+                  title: null,
+
+                  pane: {
+                      center: ['50%', '85%'],
+                      size: '140%',
+                      startAngle: -90,
+                      endAngle: 90,
+                      background: {
+                          innerRadius: '60%',
+                          outerRadius: '100%',
+                          shape: 'arc'
+                      }
+                  },
+
+                  tooltip: {
+                      enabled: false
+                  },
+
+                  // the value axis
+                  yAxis: {
+                      stops: [
+                [0.1, '#55BF3B'], // green
+                [0.5, '#DDDF0D'], // yellow
+                [0.9, '#DF5353'] // red
+            ],
+                      lineWidth: 0,
+                      minorTickInterval: null,
+                      tickPixelInterval: 400,
+                      tickWidth: 0,
+                      title: {
+                          y: -70
+                      },
+                      labels: {
+                          y: 16
+                      }
+                  },
+
+                  plotOptions: {
+                      solidgauge: {
+                          dataLabels: {
+                              y: 5,
+                              borderWidth: 0,
+                              useHTML: true
+                          }
+                      }
+                  }
+              };
+
+              var ctx = new Highcharts.Chart(Highcharts.merge(gaugeOptions, {
+                  yAxis: {
+                      min: 0,
+                      max: 200,
+                      title: {
+                          text: this.title
+                      }
+                  },
+
+                  credits: {
+                      enabled: false
+                  },
+
+                  series: [{
+                      name: this.seriename,
+                      data: [this.value],
+                      dataLabels: {
+                          format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                       '<span style="font-size:12px;color:silver">' + this.label + '</span></div>'
+                      },
+                      tooltip: {
+                          valueSuffix: ' ' + this.label
+                      }
+                  }]
+
+              }));
+          }
+    });
+  </script>
+</dom-module>
