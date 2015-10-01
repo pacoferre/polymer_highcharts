@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="highcharts-import.html">
 
 <dom-module name="highcharts-element">
@@ -8,113 +9,164 @@
 
   <template>
 	<div id="container" style="width: 270px; height: 180px"></div>
+	
+    <iron-ajax
+        id="ajax"
+        url="../../../sw/BurstData.asmx/Totals"
+        handle-as="json"
+        on-response="handleResponse"
+        method="POST"></iron-ajax>
+	
   </template>
 
   <script>
       Polymer({
           is: "highcharts-element",
-
+          ctx: null,
           properties: {
               value: {
-                  type: Number
+                  type: Number,
+                  value: 0
+              },
+              max: {
+                  type: Number,
+                  value: 200
               },
               title: {
-                  type: String
+                  type: String,
+                  value: ''
               },
               label: {
-                  type: String
+                  type: String,
+                  value: ''
               },
-			  seriename: {
-                  type: String
-			  }
+              key: {
+                  type: String,
+                  value: ''
+              },
           },
           attached: function() {
-            this.async(this._createContext, 1);  // Sanity
+            // TODO(sjmiles): measuring not available synchronously at attached (on Chrome)
+            // TODO(sjmiles): size of canvas not settable synchronously at attached (on Chrome)
+            if (this.key == '')
+            {
+                this.async(this._createContext, 1);
+            }
+          },
+          ready: function () {
+            if (this.key != '')
+            {
+                this.$.ajax.contentType = "application/json";
+                this.$.ajax.body = { "key": this.key };
+                this.$.ajax.generateRequest();
+            }
           },
           _createContext: function() {
-              var target = this.$.container;
-              var gaugeOptions = {
-                  chart: {
-                      renderTo: target,
-                    type: 'solidgauge'
-                  },
+              if (this.ctx == null)
+              {
 
-                  title: null,
-
-                  pane: {
-                      center: ['50%', '85%'],
-                      size: '140%',
-                      startAngle: -90,
-                      endAngle: 90,
-                      background: {
-                          innerRadius: '60%',
-                          outerRadius: '100%',
-                          shape: 'arc'
-                      }
-                  },
-
-                  tooltip: {
-                      enabled: false
-                  },
-
-                  // the value axis
-                  yAxis: {
-                      stops: [
-                [0.1, '#55BF3B'], // green
-                [0.5, '#DDDF0D'], // yellow
-                [0.9, '#DF5353'] // red
-            ],
-                      lineWidth: 0,
-                      minorTickInterval: null,
-                      tickPixelInterval: 400,
-                      tickWidth: 0,
-                      title: {
-                          y: -70
+                  var target = this.$.container;
+                  var gaugeOptions = {
+                      chart: {
+                          renderTo: target,
+                        type: 'solidgauge'
                       },
-                      labels: {
-                          y: 16
-                      }
-                  },
 
-                  plotOptions: {
-                      solidgauge: {
-                          dataLabels: {
-                              y: 5,
-                              borderWidth: 0,
-                              useHTML: true
+                      title: null,
+
+                      pane: {
+                          center: ['50%', '85%'],
+                          size: '140%',
+                          startAngle: -75,
+                          endAngle: 75,
+                          background: {
+                              innerRadius: '60%',
+                              outerRadius: '100%',
+                              shape: 'arc'
+                          }
+                      },
+
+                      tooltip: {
+                          enabled: false
+                      },
+
+                      // the value axis
+                      yAxis: {
+                          stops: [
+                    [0.1, '#55BF3B'], // green
+                    [0.5, '#DDDF0D'], // yellow
+                    [0.9, '#DF5353'] // red
+                ],
+                          lineWidth: 0,
+                          minorTickInterval: null,
+                          tickPixelInterval: 400,
+                          tickWidth: 0,
+                          title: {
+                              y: -70
+                          },
+                          labels: {
+                              y: 16
+                          }
+                      },
+
+                      plotOptions: {
+                          solidgauge: {
+                              dataLabels: {
+                                  y: 5,
+                                  borderWidth: 0,
+                                  useHTML: true
+                              }
                           }
                       }
-                  }
-              };
+                  };
 
-              var ctx = new Highcharts.Chart(Highcharts.merge(gaugeOptions, {
-                  yAxis: {
-                      min: 0,
-                      max: 200,
-                      title: {
-                          text: this.title
-                      }
-                  },
-
-                  credits: {
-                      enabled: false
-                  },
-
-                  series: [{
-                      name: this.seriename,
-                      data: [this.value],
-                      dataLabels: {
-                          format: '<div style="text-align:center"><span style="font-size:25px;color:' +
-                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-                       '<span style="font-size:12px;color:silver">' + this.label + '</span></div>'
+                  //<a href="../reports/BurstData.aspx" style="text-decoration:none" target="_blank">
+                  this.ctx = new Highcharts.Chart(Highcharts.merge(gaugeOptions, {
+                      yAxis: {
+                        min: 0,
+                        max: this.max,
+                        title: {
+                            text: this.title
+                        },
+                        labels: {
+                            enabled: false
+                        }
                       },
-                      tooltip: {
-                          valueSuffix: ' ' + this.label
-                      }
-                  }]
 
-              }));
+                      credits: {
+                          enabled: false
+                      },
+
+                      series: [{
+                          name: 'Size',
+                          data: [this.value],
+                          dataLabels: {
+                              format: '<div style="text-align:center"><span style="font-size:25px;color:#707070' +
+                                    '">{y}</span><br/>' +
+                           '<span style="font-size:12px;color:#707070">' + this.label + '</span></div>'
+                          },
+                          tooltip: {
+                              valueSuffix: ' ' + this.label
+                          }
+                      }]
+
+                  }));
+                }
+                else
+                {
+//                    this.ctx.setValue(this.value);
+                }
+          },
+          handleResponse: function(request) {
+            var r = this.$.ajax.lastResponse.d;
+
+            this.value = r.value;
+            this.label = r.units;
+            this.title = r.title;
+            this.max = r.max;
+            this._createContext();
           }
     });
   </script>
+
 </dom-module>
